@@ -217,7 +217,6 @@ func (app *application) InsertMovie(w http.ResponseWriter, r *http.Request) {
 	movie.CreatedAt = time.Now()
 	movie.UpdatedAt = time.Now()
 
-
 	newID, err := app.DB.InsertMovie(movie)
 	if err != nil {
 		app.errorJSON(w, err)
@@ -231,8 +230,8 @@ func (app *application) InsertMovie(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := JSONResponse {
-		Error: false,
+	resp := JSONResponse{
+		Error:   false,
 		Message: "movie updated",
 	}
 
@@ -241,7 +240,7 @@ func (app *application) InsertMovie(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) getPoster(movie models.Movie) models.Movie {
 	type TheMovieDB struct {
-		Page int `json:"page"`
+		Page    int `json:"page"`
 		Results []struct {
 			PosterPath string `json:"poster_path"`
 		} `json:"results"`
@@ -284,4 +283,85 @@ func (app *application) getPoster(movie models.Movie) models.Movie {
 	}
 
 	return movie
+}
+
+func (app *application) UpdateMovie(w http.ResponseWriter, r *http.Request) {
+	var payload models.Movie
+
+	err := app.readJSON(w, r, &payload)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	movie, err := app.DB.OneMovie(payload.ID)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	movie.Title = payload.Title
+	movie.ReleaseDate = payload.ReleaseDate
+	movie.Description = payload.Description
+	movie.MPAARating = payload.MPAARating
+	movie.RunTime = payload.RunTime
+	movie.UpdatedAt = time.Now()
+
+	// run the updatemovie of the database repository
+	err = app.DB.UpdateMovie(*movie)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	err = app.DB.UpdateMovieGenres(movie.ID, payload.GenresArray)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	response := JSONResponse{
+		Error:   false,
+		Message: "movie updated",
+	}
+
+	app.writeJSON(w, http.StatusAccepted, response)
+}
+
+func (app *application) DeleteMovie(w http.ResponseWriter, r *http.Request) {
+	// Getting the ID from the URL parameter
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	err = app.DB.DeleteMovie(id)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	response := JSONResponse{
+		Error:   false,
+		Message: "movie deleted",
+	}
+
+	app.writeJSON(w, http.StatusAccepted, response)
+}
+
+func (app *application) AllMoviesByGenre(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	movies, err := app.DB.AllMovies(id)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	app.writeJSON(w, http.StatusAccepted, movies)
 }

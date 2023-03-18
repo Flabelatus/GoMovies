@@ -1,33 +1,48 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom"
 
-const Movies = () => {
+
+const OneGenre = () => {
+    // we need to get the prop passed to this component
+    const location = useLocation();
+    const { genreName } = location.state;
+
+    // set stateful variables
     const [movies, setMovies] = useState([]);
 
-    useEffect( () => {
+    // get the id from url
+    let { id } = useParams();
+
+    // useeffect to get list of movies
+    useEffect(() => {
         const headers = new Headers();
         headers.append("Content-Type", "application/json");
 
         const requestOptions = {
             method: "GET",
-            headers: headers,
+            headers: headers
         }
 
-        fetch(`http://localhost:8080/movies`, requestOptions)
+        fetch(`/movies/genres/${id}`, requestOptions)
             .then((response) => response.json())
             .then((data) => {
-                setMovies(data);
+                if (data.error) {
+                    console.log(data.message);
+                } else {
+                    setMovies(data);
+                }
             })
-            .catch(err => {
-                console.log(err);
-            })
+            .catch((err) => {console.log(err)});
+    }, [id]);
 
-    }, []);
-
-    return(
-        <div>
-            <h2>Movies</h2>
+    // return jsx
+    return (
+        <>
+            <h2>Genre: {genreName}</h2>
             <hr />
+            
+            {movies ? (
+            
             <table className="table table-striped table-hover table-dark">
                 <thead>
                     <tr>
@@ -46,12 +61,17 @@ const Movies = () => {
                             </td>
                             <td>{m.release_date}</td>
                             <td>{m.mpaa_rating}</td>
-                        </tr>    
+                        </tr>
                     ))}
                 </tbody>
             </table>
-        </div>
+
+            ) : (
+
+                <p>No movies with this genre yet</p>
+            )}
+        </>
     )
 }
 
-export default Movies;
+export default OneGenre;
