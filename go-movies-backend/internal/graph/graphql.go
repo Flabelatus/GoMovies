@@ -16,6 +16,7 @@ type Graph struct {
 	movieType   *graphql.Object
 }
 
+// factory method
 func New(movies []*models.Movie) *Graph {
 	var movieType = graphql.NewObject(
 		graphql.ObjectConfig{
